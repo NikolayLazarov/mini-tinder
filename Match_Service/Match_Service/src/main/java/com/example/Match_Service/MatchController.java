@@ -45,7 +45,7 @@ public class MatchController {
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/requests/{id}")
-    public void rejectUser(String id, @RequestBody Map<String, String> statusMatch){
+    public void addMatchStatus(String id, @RequestBody Map<String, String> statusMatch){
         //String id is the id of the current user
         id = "U1";
         matchingService.addMatch(id, statusMatch);

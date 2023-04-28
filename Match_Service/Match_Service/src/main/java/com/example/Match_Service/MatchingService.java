@@ -10,15 +10,17 @@ import java.util.*;
 @Repository
 public class MatchingService {
 
-    @Autowired
-    private KafkaConsumer kafkaProducer;
+    private StringKafkaProducer kafkaProducer;
 
     @Autowired
-    private KafkaTemplate<String,Match> kafkaTemplate;
-
-    public void sendMatch(Match match){
-        kafkaTemplate.send("matches", match);
+    public MatchingService(StringKafkaProducer kafkaProducer) {
+        this.kafkaProducer = kafkaProducer;
     }
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+    //    @Autowired
+//    private KafkaTemplate< String,Match> kafkaTemplate;
 
     @Autowired
     JdbcTemplate jdbcTemplate;
@@ -50,7 +52,6 @@ public class MatchingService {
         List <User> queryUsers = jdbcTemplate.query(
                 sql, new UserRowMapper());
         System.out.println(queryUsers);
-//        kafkaTemplate.send("matches", String.valueOf(queryUsers));
         return queryUsers;
     }
 
@@ -64,8 +65,6 @@ public class MatchingService {
 
         List <User> queryUsers = jdbcTemplate.query(
                 sql, new UserRowMapper());
-        System.out.println(queryUsers);
-//        kafkaTemplate.send("matches", String.valueOf(queryUsers));
         return queryUsers;
     }
 
@@ -81,8 +80,6 @@ public class MatchingService {
 
         List <User> queryUsers = jdbcTemplate.query(
                 sql, new UserRowMapper());
-        System.out.println(queryUsers);
-//        kafkaTemplate.send("matches", String.valueOf(queryUsers));
         return queryUsers;
     }
 
@@ -94,7 +91,6 @@ public class MatchingService {
                  "where usersdata.userId = '%s';",id);
          User user =  jdbcTemplate.queryForObject(sql,new UserRowMapper());
         assert user != null;
-//        kafkaTemplate.send("matches",user.toString());
         return user;
     }
 
@@ -102,8 +98,15 @@ public class MatchingService {
 
         jdbcTemplate.update("INSERT INTO minitinder.matches(firstUserId, secondUserId, matchStatus)  VALUE(?,?,?);",
                 id, match.get("id"), match.get("status"));
+        Match newMatch = new Match (id,match.get("id"),match.get("status"));
+        String message= String.format("{ " +
+                "id1: %s," +
+                "id2: %s," +
+                "}",id, match.get("id"));
+    if (match.get("status").equals("approved")){
+            kafkaProducer.sendMessage(message);
 
-        kafkaTemplate.send("my-topic",new Match(id, match.get("id"), match.get("status")) );
+        }
     }
 
     public List<Match> getRequests(String id) {
